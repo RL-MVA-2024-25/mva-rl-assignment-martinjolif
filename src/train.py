@@ -23,5 +23,5 @@ class ProjectAgent:
         pass
 
     def load(self):
-        with gzip.open('FQI_Q_functions.pkl.gz', 'rb') as f:
+        with gzip.open('src/FQI_Q_functions.pkl.gz', 'rb') as f:
             self.QfunctionsLoaded = pickle.load(f)
