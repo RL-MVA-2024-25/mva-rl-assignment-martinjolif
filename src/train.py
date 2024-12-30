@@ -1,4 +1,4 @@
-from copyreg import pickle
+import pickle
 from gymnasium.wrappers import TimeLimit
 from env_hiv import HIVPatient
 from utils import greedy_action_FQI
