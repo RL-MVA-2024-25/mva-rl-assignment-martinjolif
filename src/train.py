@@ -1,5 +1,7 @@
+from copyreg import pickle
 from gymnasium.wrappers import TimeLimit
 from env_hiv import HIVPatient
+from utils import greedy_action_FQI
 
 env = TimeLimit(
     env=HIVPatient(domain_randomization=False), max_episode_steps=200
@@ -12,10 +14,12 @@ env = TimeLimit(
 # ENJOY!
 class ProjectAgent:
     def act(self, observation, use_random=False):
-        return 0
+        action = greedy_action_FQI(self.QfunctionsLoaded[-1], observation, env.action_space.n)
+        return action
 
     def save(self, path):
         pass
 
     def load(self):
-        pass
+        with open('FQI_Q_functions.pkl', 'rb') as f:
+            self.QfunctionsLoaded = pickle.load(f)

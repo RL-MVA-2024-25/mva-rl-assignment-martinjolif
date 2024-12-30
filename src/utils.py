@@ -20,8 +20,15 @@ class ReplayBuffer:
         return len(self.data)
 
 
-def greedy_action(network, state):
+def greedy_action_DQN(network, state):
     device = "cuda" if next(network.parameters()).is_cuda else "cpu"
     with torch.no_grad():
         Q = network(torch.Tensor(state).unsqueeze(0).to(device))
         return torch.argmax(Q).item()
+
+def greedy_action_FQI(Q,s,nb_actions):
+    Qsa = []
+    for a in range(nb_actions):
+        sa = np.append(s,a).reshape(1, -1)
+        Qsa.append(Q.predict(sa))
+    return np.argmax(Qsa)

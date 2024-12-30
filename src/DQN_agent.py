@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 from utils import ReplayBuffer
-from utils import greedy_action
+from utils import greedy_action_DQN
 
 
 class dqn_agent:
@@ -52,6 +52,7 @@ class dqn_agent:
         best_reward = 0
 
         while episode < max_episode:
+            print(step)
             # update epsilon
             if step > self.epsilon_delay:
                 epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
