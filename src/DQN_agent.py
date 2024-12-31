@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import torch.nn as nn
+from tqdm import tqdm
 from copy import deepcopy
 from utils import ReplayBuffer
 from utils import greedy_action_DQN
@@ -51,59 +51,61 @@ class dqn_agent:
         step = 0
         best_reward = 0
 
-        while episode < max_episode:
-            print(step)
-            # update epsilon
-            if step > self.epsilon_delay:
-                epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
+        with tqdm(total=max_episode, desc="Training Progress") as pbar:
+            while episode < max_episode:
+                print(step)
+                # update epsilon
+                if step > self.epsilon_delay:
+                    epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
 
-            # select epsilon-greedy action
-            if np.random.rand() < epsilon:
-                action = np.random.randint(self.nb_actions)
-            else:
-                action = greedy_action_DQN(self.model, state)
+                # select epsilon-greedy action
+                if np.random.rand() < epsilon:
+                    action = np.random.randint(self.nb_actions)
+                else:
+                    action = greedy_action_DQN(self.model, state)
 
-            # step
-            next_state, reward, done, trunc, _ = env.step(action)
-            self.memory.append(state, action, reward, next_state, done)
-            episode_cum_reward += reward
+                # step
+                next_state, reward, done, trunc, _ = env.step(action)
+                self.memory.append(state, action, reward, next_state, done)
+                episode_cum_reward += reward
 
-            # train
-            for _ in range(self.nb_gradient_steps):
-                self.gradient_step()
+                # train
+                for _ in range(self.nb_gradient_steps):
+                    self.gradient_step()
 
-            # update target network if needed
-            if self.update_target_strategy == 'replace':
-                if step % self.update_target_freq == 0:
-                    self.target_model.load_state_dict(self.model.state_dict())
-            if self.update_target_strategy == 'ema':
-                target_state_dict = self.target_model.state_dict()
-                model_state_dict = self.model.state_dict()
-                tau = self.update_target_tau
-                for key in model_state_dict:
-                    target_state_dict[key] = tau * model_state_dict + (1 * tau) * target_state_dict
-                self.target_model.load_state_dict(target_state_dict)
-
-
-            # next transition
-            step += 1
-            if done or trunc:
-                #save the best model
-                if reward > best_reward:
-                    best_reward = reward
-                    torch.save(self.model.state_dict(), 'checkpoint-DQN.pth')
+                # update target network if needed
+                if self.update_target_strategy == 'replace':
+                    if step % self.update_target_freq == 0:
+                        self.target_model.load_state_dict(self.model.state_dict())
+                if self.update_target_strategy == 'ema':
+                    target_state_dict = self.target_model.state_dict()
+                    model_state_dict = self.model.state_dict()
+                    tau = self.update_target_tau
+                    for key in model_state_dict:
+                        target_state_dict[key] = tau * model_state_dict + (1 * tau) * target_state_dict
+                    self.target_model.load_state_dict(target_state_dict)
 
 
-                episode += 1
-                print("Episode ", '{:3d}'.format(episode),
-                      ", epsilon ", '{:6.2f}'.format(epsilon),
-                      ", batch size ", '{:5d}'.format(len(self.memory)),
-                      ", episode return ", '{:4.1f}'.format(episode_cum_reward),
-                      sep='')
-                state, _ = env.reset()
-                episode_return.append(episode_cum_reward)
-                episode_cum_reward = 0
-            else:
-                state = next_state
+                # next transition
+                step += 1
+                if done or trunc:
+                    #save the best model
+                    if reward > best_reward:
+                        best_reward = reward
+                        torch.save(self.model.state_dict(), 'checkpoint-DQN.pth')
+
+
+                    episode += 1
+                    pbar.set_postfix({
+                        "Episode": episode,
+                        "Epsilon": epsilon,
+                        "Batch Size": len(self.memory),
+                        "Episode Return": episode_cum_reward
+                    })
+                    state, _ = env.reset()
+                    episode_return.append(episode_cum_reward)
+                    episode_cum_reward = 0
+                else:
+                    state = next_state
 
         return episode_return
