@@ -53,7 +53,6 @@ class dqn_agent:
 
         with tqdm(total=max_episode, desc="Training Progress") as pbar:
             while episode < max_episode:
-                print(step)
                 # update epsilon
                 if step > self.epsilon_delay:
                     epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
