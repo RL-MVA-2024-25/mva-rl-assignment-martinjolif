@@ -27,9 +27,9 @@ class dqn_agent:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config['learning_rate'])
         self.nb_gradient_steps = config['gradient_steps']
         self.target_model = deepcopy(self.model).to(device)
-        #self.update_target_strategy = config['update_target_strategy']
-        #self.update_target_freq = config['update_target_freq']
-        #self.update_target_tau = config['update_target_tau']
+        self.update_target_strategy = config['update_target_strategy']
+        self.update_target_freq = config['update_target_freq']
+        self.update_target_tau = config['update_target_tau']
 
     def gradient_step(self):
         if len(self.memory) > self.batch_size:
@@ -61,20 +61,17 @@ class dqn_agent:
             if np.random.rand() < epsilon:
                 action = np.random.randint(self.nb_actions)
             else:
-                action = greedy_action(self.model, state)
-
+                action = greedy_action_DQN(self.model, state)
 
             # step
             next_state, reward, done, trunc, _ = env.step(action)
             self.memory.append(state, action, reward, next_state, done)
             episode_cum_reward += reward
 
-
             # train
             for _ in range(self.nb_gradient_steps):
                 self.gradient_step()
 
-            """
             # update target network if needed
             if self.update_target_strategy == 'replace':
                 if step % self.update_target_freq == 0:
@@ -86,7 +83,7 @@ class dqn_agent:
                 for key in model_state_dict:
                     target_state_dict[key] = tau * model_state_dict + (1 * tau) * target_state_dict
                 self.target_model.load_state_dict(target_state_dict)
-            """
+
 
             # next transition
             step += 1
@@ -94,7 +91,7 @@ class dqn_agent:
                 #save the best model
                 if reward > best_reward:
                     best_reward = reward
-                    torch.save(self.model.state_dict(), 'checkpoint.pth')
+                    torch.save(self.model.state_dict(), 'checkpoint-DQN.pth')
 
 
                 episode += 1
