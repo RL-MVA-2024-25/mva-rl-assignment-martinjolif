@@ -35,7 +35,8 @@ class dqn_agent:
         if len(self.memory) > self.batch_size:
             X, A, R, Y, D = self.memory.sample(self.batch_size)
             QYmax = self.target_model(Y).max(1)[0].detach()
-            update = torch.addcmul(R, self.gamma, 1 - D, QYmax)
+            update = torch.addcmul(R, 1 - D, QYmax, value=self.gamma)
+            #update = torch.addcmul(R, self.gamma, 1 - D, QYmax)
             QXA = self.model(X).gather(1, A.to(torch.long).unsqueeze(1))
             loss = self.criterion(QXA, update.unsqueeze(1))
             self.optimizer.zero_grad()
@@ -91,6 +92,7 @@ class dqn_agent:
                     #save the best model
                     if reward > best_reward:
                         best_reward = reward
+                        self.best_model = deepcopy(self.model).to(self.device)
                         torch.save(self.model.state_dict(), 'checkpoint-DQN.pth')
 
 
@@ -107,4 +109,5 @@ class dqn_agent:
                 else:
                     state = next_state
 
+        #self.model.load_state_dict(self.best_model.state_dict()) #??
         return episode_return
