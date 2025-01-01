@@ -8,11 +8,11 @@ from utils import greedy_action_DQN
 
 class dqn_agent:
     def __init__(self, config, model):
-        device = "cuda" if next(model.parameters()).is_cuda else "cpu"
+        self.device = "cuda" if next(model.parameters()).is_cuda else "cpu"
         self.gamma = config['gamma']
         self.batch_size = config['batch_size']
         self.nb_actions = config['nb_actions']
-        self.memory = ReplayBuffer(config['buffer_size'], device)
+        self.memory = ReplayBuffer(config['buffer_size'], self.device)
         self.epsilon_max = config['epsilon_max']
         self.epsilon_min = config['epsilon_min']
         self.epsilon_stop = config['epsilon_decay_period']
@@ -26,7 +26,7 @@ class dqn_agent:
             self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config['learning_rate'])
         self.nb_gradient_steps = config['gradient_steps']
-        self.target_model = deepcopy(self.model).to(device)
+        self.target_model = deepcopy(self.model).to(self.device)
         self.update_target_strategy = config['update_target_strategy']
         self.update_target_freq = config['update_target_freq']
         self.update_target_tau = config['update_target_tau']
@@ -54,6 +54,10 @@ class dqn_agent:
 
         with tqdm(total=max_episode, desc="Training Progress") as pbar:
             while episode < max_episode:
+                # Use tqdm to track steps
+                pbar.set_postfix({"Steps": step})
+                pbar.update(1)  # Progress bar update
+
                 # update epsilon
                 if step > self.epsilon_delay:
                     epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
@@ -109,5 +113,4 @@ class dqn_agent:
                 else:
                     state = next_state
 
-        #self.model.load_state_dict(self.best_model.state_dict()) #??
         return episode_return
