@@ -54,10 +54,6 @@ class dqn_agent:
 
         with tqdm(total=max_episode, desc="Training Progress") as pbar:
             while episode < max_episode:
-                # Use tqdm to track steps
-                pbar.set_postfix({"Steps": step})
-                pbar.update(1)  # Progress bar update
-
                 # update epsilon
                 if step > self.epsilon_delay:
                     epsilon = max(self.epsilon_min, epsilon - self.epsilon_step)
