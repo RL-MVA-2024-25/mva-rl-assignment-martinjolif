@@ -1,11 +1,8 @@
-import pickle
 from gymnasium.wrappers import TimeLimit
 from env_hiv import HIVPatient
-from utils import greedy_action_FQI, greedy_action_DQN
+from agents.utils import greedy_action_DQN
 import torch.nn as nn
 import torch
-
-import gzip
 
 env = TimeLimit(
     env=HIVPatient(domain_randomization=False), max_episode_steps=200
@@ -33,22 +30,18 @@ class ProjectAgent:
     def load(self):
         #For loading FQI
         """
-        with gzip.open('src/FQI_Q_functions.pkl.gz', 'rb') as f:
+        with gzip.open('src/agents/FQI_Q_functions-2-9.pkl.gz', 'rb') as f:
             self.QfunctionsLoaded = pickle.load(f)
         """
 
         #For loading DQN
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.DQN_model = nn.Sequential(nn.Linear(env.observation_space.shape[0], 128),
-                                  nn.ReLU(),
-                                  nn.Linear(128, 64),
-                                  nn.ReLU(),
-                                  nn.Linear(64, 32),
-                                  nn.ReLU(),
-                                  nn.Linear(32, 64),
-                                  nn.ReLU(),
-                                  nn.Linear(64, 128),
-                                  nn.ReLU(),
-                                  nn.Linear(128, env.action_space.n)).to(device)
-        self.DQN_model.load_state_dict(torch.load('src/checkpoint-DQN.pth'))
+        self.DQN_model = torch.nn.Sequential(nn.Linear(env.observation_space.shape[0], 256),
+                          nn.ReLU(),
+                          nn.Linear(256, 128),
+                          nn.ReLU(),
+                          nn.Linear(128, 256),
+                          nn.ReLU(),
+                          nn.Linear(256, env.action_space.n)).to(device)
+        self.DQN_model.load_state_dict(torch.load('src/agents/checkpoint-DQN-7-9.pth', map_location=device, weights_only=False))
         self.DQN_model.eval()
